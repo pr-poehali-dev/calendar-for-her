@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import Icon from '@/components/ui/icon';
+import Analytics from '@/components/Analytics';
 
 type Category = 'family' | 'health' | 'work' | 'sport' | 'tasks';
 type Priority = 'low' | 'medium' | 'high';
@@ -57,6 +59,7 @@ const moodEmojis = {
 
 export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState('calendar');
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
@@ -183,7 +186,20 @@ export default function Calendar() {
           <p className="text-slate-600">Организуй свою жизнь в одном месте</p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-6">
+            <TabsTrigger value="calendar" className="gap-2">
+              <Icon name="Calendar" size={16} />
+              Календарь
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <Icon name="BarChart3" size={16} />
+              Аналитика
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="calendar">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-1 p-6 animate-scale-in">
             <CalendarComponent
               mode="single"
@@ -495,8 +511,13 @@ export default function Calendar() {
                 </p>
               )}
             </Card>
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <Analytics moodEntries={moodEntries} tasks={tasks} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
