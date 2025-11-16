@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import Icon from '@/components/ui/icon';
 import Analytics from '@/components/Analytics';
+import Notifications from '@/components/Notifications';
 
 type Category = 'family' | 'health' | 'work' | 'sport' | 'tasks';
 type Priority = 'low' | 'medium' | 'high';
@@ -187,7 +188,7 @@ export default function Calendar() {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-6">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-6">
             <TabsTrigger value="calendar" className="gap-2">
               <Icon name="Calendar" size={16} />
               Календарь
@@ -195,6 +196,10 @@ export default function Calendar() {
             <TabsTrigger value="analytics" className="gap-2">
               <Icon name="BarChart3" size={16} />
               Аналитика
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-2">
+              <Icon name="Bell" size={16} />
+              Уведомления
             </TabsTrigger>
           </TabsList>
 
@@ -511,13 +516,18 @@ export default function Calendar() {
                 </p>
               )}
             </Card>
-            </div>
-          </TabsContent>
+          </div>
+        </div>
+      </TabsContent>
 
-          <TabsContent value="analytics">
-            <Analytics moodEntries={moodEntries} tasks={tasks} />
-          </TabsContent>
-        </Tabs>
+      <TabsContent value="analytics">
+        <Analytics moodEntries={moodEntries} tasks={tasks} />
+      </TabsContent>
+
+      <TabsContent value="notifications">
+        <Notifications tasks={tasks} />
+      </TabsContent>
+    </Tabs>
       </div>
     </div>
   );
