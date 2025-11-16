@@ -16,6 +16,7 @@ import Icon from '@/components/ui/icon';
 type Category = 'family' | 'health' | 'work' | 'sport' | 'tasks';
 type Priority = 'low' | 'medium' | 'high';
 type MoodType = 'great' | 'good' | 'ok' | 'bad' | 'terrible';
+type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly';
 
 interface Task {
   id: string;
@@ -25,6 +26,8 @@ interface Task {
   category: Category;
   priority: Priority;
   completed: boolean;
+  repeat: RepeatType;
+  repeatUntil?: Date;
 }
 
 interface MoodEntry {
@@ -90,6 +93,7 @@ export default function Calendar() {
     category: 'tasks',
     priority: 'medium',
     date: new Date(),
+    repeat: 'none',
   });
   const [newMood, setNewMood] = useState<Partial<MoodEntry>>({
     date: new Date(),
@@ -99,9 +103,32 @@ export default function Calendar() {
     apathy: false,
   });
 
-  const todayTasks = tasks.filter(
-    (task) => format(task.date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
-  );
+  const getTasksForDate = (date: Date) => {
+    return tasks.filter((task) => {
+      const taskDate = format(task.date, 'yyyy-MM-dd');
+      const selectedDateStr = format(date, 'yyyy-MM-dd');
+      
+      if (taskDate === selectedDateStr) return true;
+      
+      if (task.repeat !== 'none' && new Date(task.date) <= date) {
+        if (task.repeatUntil && date > task.repeatUntil) return false;
+        
+        const daysDiff = Math.floor((date.getTime() - new Date(task.date).getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (task.repeat === 'daily') return true;
+        if (task.repeat === 'weekly' && daysDiff % 7 === 0) return true;
+        if (task.repeat === 'monthly') {
+          const taskDay = new Date(task.date).getDate();
+          const selectedDay = date.getDate();
+          return taskDay === selectedDay;
+        }
+      }
+      
+      return false;
+    });
+  };
+
+  const todayTasks = getTasksForDate(selectedDate);
 
   const todayMood = moodEntries.find(
     (entry) => format(entry.date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
@@ -119,9 +146,11 @@ export default function Calendar() {
           category: newTask.category as Category,
           priority: newTask.priority as Priority,
           completed: false,
+          repeat: newTask.repeat as RepeatType,
+          repeatUntil: newTask.repeatUntil,
         },
       ]);
-      setNewTask({ category: 'tasks', priority: 'medium', date: new Date() });
+      setNewTask({ category: 'tasks', priority: 'medium', date: new Date(), repeat: 'none' });
       setIsAddTaskOpen(false);
     }
   };
@@ -249,6 +278,40 @@ export default function Calendar() {
                           />
                         </PopoverContent>
                       </Popover>
+                      <Select
+                        value={newTask.repeat}
+                        onValueChange={(value) => setNewTask({ ...newTask, repeat: value as RepeatType })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Повтор" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Не повторять</SelectItem>
+                          <SelectItem value="daily">Каждый день</SelectItem>
+                          <SelectItem value="weekly">Каждую неделю</SelectItem>
+                          <SelectItem value="monthly">Каждый месяц</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {newTask.repeat !== 'none' && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2">
+                              <Icon name="CalendarX" size={16} />
+                              {newTask.repeatUntil
+                                ? format(newTask.repeatUntil, 'PPP', { locale: ru })
+                                : 'Повторять до... (необязательно)'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={newTask.repeatUntil}
+                              onSelect={(date) => setNewTask({ ...newTask, repeatUntil: date })}
+                              locale={ru}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      )}
                       <Button onClick={addTask} className="w-full">
                         Создать задачу
                       </Button>
@@ -295,9 +358,19 @@ export default function Calendar() {
                           {task.description && (
                             <p className="text-sm text-slate-600 mb-2">{task.description}</p>
                           )}
-                          <Badge variant="outline" className={categories[task.category].color}>
-                            {categories[task.category].name}
-                          </Badge>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className={categories[task.category].color}>
+                              {categories[task.category].name}
+                            </Badge>
+                            {task.repeat !== 'none' && (
+                              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 gap-1">
+                                <Icon name="Repeat" size={12} />
+                                {task.repeat === 'daily' && 'Ежедневно'}
+                                {task.repeat === 'weekly' && 'Еженедельно'}
+                                {task.repeat === 'monthly' && 'Ежемесячно'}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </Card>
